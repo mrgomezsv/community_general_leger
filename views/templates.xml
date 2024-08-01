@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Herencia de la vista account.group.form -->
+        <record id="view_account_group_form_inherit" model="ir.ui.view">
+            <field name="name">account.group.form.inherit</field>
+            <field name="model">account.group</field>
+            <field name="inherit_id" ref="account.view_account_group_form"/>
+            <field name="arch" type="xml">
+                <!-- Aquí se insertan los campos en la vista original -->
+                <xpath expr="//sheet/group" position="inside">
+                    <field name="major_account" string="Es cuenta de mayor?"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
