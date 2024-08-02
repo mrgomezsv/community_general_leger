@@ -9,17 +9,15 @@
         Libro Mayor para Odoo Community
     """,
 
-    'author': "My Company",
-    'website': "https://www.yourcompany.com",
+    'author': "Mario Roberto",
+    'website': "https://mrgomezsv.github.io/",
 
     'category': 'Accounting',
     'version': '0.1',
 
     'depends': ['account'],
 
-    # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
     ],
