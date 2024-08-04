@@ -10,6 +10,7 @@
             <field name="arch" type="xml">
                 <!-- Aquí se insertan los campos en la vista original -->
                 <xpath expr="//sheet/group" position="inside">
+                    <field name="company_id" string="Compañia:"/>
                     <field name="major_account" string="Es cuenta de mayor?"/>
                 </xpath>
             </field>
