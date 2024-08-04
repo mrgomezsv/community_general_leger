@@ -23,7 +23,7 @@
         </record>
 
         <record id="general_ledger_action" model="ir.actions.act_window">
-            <field name="name">Libro Mayor por Cuentas</field>
+            <field name="name">Generar Libro Mayor</field>
             <field name="res_model">general.ledger</field>
             <field name="view_mode">form</field>
             <field name="target">new</field>

@@ -19,7 +19,7 @@
 
         <!-- Menu -->
         <record id="action_account_group_tree" model="ir.actions.act_window">
-        <field name="name">Account Groups</field>
+        <field name="name">Grupos de Cuentas</field>
         <field name="res_model">account.group</field>
         <field name="view_mode">tree,form</field>
         <field name="search_view_id" ref="account.view_account_group_search"/>
