@@ -5,6 +5,7 @@ from openpyxl.styles import Font, Alignment
 from io import BytesIO
 import base64
 
+
 class GeneralLedger(models.TransientModel):
     _name = 'general.ledger'
     _description = 'General Ledger'
@@ -14,7 +15,9 @@ class GeneralLedger(models.TransientModel):
     report_to_date = fields.Date(string="Reporte hasta", required=True, default=fields.Date.context_today)
     company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company)
     file_content = fields.Binary(string="Archivo Contenido")
-    file_name = fields.Char(string="Nombre del Archivo", default="reporte.xlsx")
+    file_name = fields.Char(string="Nombre del Archivo", default="Libro Mayor.xlsx")
+    code_prefix_start = fields.Char(string="Prefijo de Código Inicio")
+    code_prefix_end = fields.Char(string="Prefijo de Código Fin")
 
     def action_generate_excel(self):
         # Crear un libro de trabajo y una hoja
@@ -56,12 +59,24 @@ class GeneralLedger(models.TransientModel):
             cell.font = bold_font
             cell.alignment = center_alignment
 
-        # Aquí puedes agregar lógica para recuperar datos basados en las fechas
-        # Por simplicidad, añado datos estáticos como ejemplo
-        data = [
-            ['Dato1', 'Dato2', 'Dato3'],
-            ['Dato4', 'Dato5', 'Dato6'],
-        ]
+        # Filtrar las cuentas contables por prefijo
+        account_model = self.env['account.account']
+        domain = [('code', 'ilike', self.code_prefix_start)]
+        if self.code_prefix_end:
+            domain.append(('code', '<=', self.code_prefix_end))
+        accounts = account_model.search(domain)
+
+        # Agregar los datos de las cuentas al Excel
+        data = []
+        for account in accounts:
+            data.append([
+                account.code,
+                account.name,
+                '',  # Fecha, puedes agregar la lógica para calcular la fecha
+                0.0,  # Debe, puedes agregar la lógica para calcular el valor del debe
+                0.0,  # Haber, puedes agregar la lógica para calcular el valor del haber
+                0.0  # Saldo, puedes agregar la lógica para calcular el saldo
+            ])
 
         for row in data:
             ws.append(row)
