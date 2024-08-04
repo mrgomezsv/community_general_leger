@@ -8,12 +8,10 @@
                     <group>
                         <group>
                             <field name="report_from_date"/>
-<!--                            <field name="res_seller_ids" string="Cuentas Analiticas" widget="many2many_tags" options="{'no_create': True}"/>-->
                             <field name="file_content" invisible="1"/>
                         </group>
                         <group>
                             <field name="report_to_date"/>
-<!--                            <field name="company_id"/>-->
                         </group>
                     </group>
                     <footer>
