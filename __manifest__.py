@@ -19,8 +19,7 @@
 
     'data': [
         'security/ir.model.access.csv',
-        'views/views.xml',
-        'views/templates.xml',
+        'views/account_group.xml',
         'wizard/general_ledger.xml',
     ],
 }
