@@ -18,7 +18,9 @@
     'depends': ['account'],
 
     'data': [
+        'security/ir.model.access.csv',
         'views/views.xml',
         'views/templates.xml',
+        'wizard/general_ledger.xml',
     ],
 }
