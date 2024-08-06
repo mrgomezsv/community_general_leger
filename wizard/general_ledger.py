@@ -89,17 +89,18 @@ class GeneralLedger(models.TransientModel):
                     initial_credit += move.credit
                     initial_balance += move.debit - move.credit
 
-            # Agrupar movimientos por fecha
-            date_summaries = defaultdict(lambda: {'debit': 0.0, 'credit': 0.0})
-
-            for move in moves:
-                date_summaries[move.date]['debit'] += move.debit
-                date_summaries[move.date]['credit'] += move.credit
-
-            # Calcular totales para el grupo
-            total_debit = sum(move.debit for move in moves)
-            total_credit = sum(move.credit for move in moves)
-            total_balance = total_debit - total_credit
+            # Calcular los totales históricos (desde la creación de las cuentas hasta la fecha de fin del reporte)
+            total_debit = 0.0
+            total_credit = 0.0
+            total_balance = 0.0
+            all_moves = self.env['account.move.line'].search([
+                ('account_id', 'in', accounts.ids),
+                ('date', '<=', self.report_to_date)
+            ])
+            for move in all_moves:
+                total_debit += move.debit
+                total_credit += move.credit
+                total_balance += move.debit - move.credit
 
             # Agregar datos del grupo en la fila 7
             ws.cell(row=row_index, column=1, value=account_prefix).font = bold_font
@@ -124,6 +125,13 @@ class GeneralLedger(models.TransientModel):
             for cell in ws[row_index]:
                 cell.font = bold_font
             row_index += 1
+
+            # Agrupar movimientos por fecha
+            date_summaries = defaultdict(lambda: {'debit': 0.0, 'credit': 0.0})
+
+            for move in moves:
+                date_summaries[move.date]['debit'] += move.debit
+                date_summaries[move.date]['credit'] += move.credit
 
             # Agregar los datos agrupados por fecha
             accumulated_debit = initial_debit
