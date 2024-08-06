@@ -6,6 +6,7 @@ from io import BytesIO
 import base64
 from collections import defaultdict
 
+
 class GeneralLedger(models.TransientModel):
     _name = 'general.ledger'
     _description = 'General Ledger'
@@ -74,6 +75,20 @@ class GeneralLedger(models.TransientModel):
                 ('date', '<=', self.report_to_date)
             ])
 
+            # Calcular saldos iniciales consolidados para el grupo de cuentas
+            initial_debit = 0.0
+            initial_credit = 0.0
+            initial_balance = 0.0
+            for account in accounts:
+                initial_moves = self.env['account.move.line'].search([
+                    ('account_id', '=', account.id),
+                    ('date', '<', self.report_from_date)
+                ])
+                for move in initial_moves:
+                    initial_debit += move.debit
+                    initial_credit += move.credit
+                    initial_balance += move.debit - move.credit
+
             # Agrupar movimientos por fecha
             date_summaries = defaultdict(lambda: {'debit': 0.0, 'credit': 0.0})
 
@@ -95,8 +110,31 @@ class GeneralLedger(models.TransientModel):
 
             row_index += 1
 
+            # Agregar la fila de saldo inicial para Debe, Haber, y Saldo
+            ws.append([
+                '',  # Código de cuenta en blanco
+                'SALDO INICIAL',  # Etiqueta para el saldo inicial
+                '', '', '',  # Celdas vacías para fecha y código de cuenta
+                initial_debit,  # Saldo inicial Debe
+                initial_credit,  # Saldo inicial Haber
+                initial_balance  # Saldo inicial Saldo
+            ])
+
+            # Aplicar formato en negrita a toda la fila de saldo inicial
+            for cell in ws[row_index]:
+                cell.font = bold_font
+            row_index += 1
+
             # Agregar los datos agrupados por fecha
+            accumulated_debit = initial_debit
+            accumulated_credit = initial_credit
+            accumulated_balance = initial_balance
+
             for date, summary in date_summaries.items():
+                accumulated_debit += summary['debit']
+                accumulated_credit += summary['credit']
+                accumulated_balance = accumulated_debit - accumulated_credit
+
                 ws.append([
                     "",  # Código de cuenta en blanco
                     "Movimiento del",  # Reemplazado por "Movimiento del"
@@ -106,6 +144,21 @@ class GeneralLedger(models.TransientModel):
                     summary['debit'] - summary['credit']
                 ])
                 row_index += 1
+
+            # Agregar la fila de suma para cada grupo de cuentas
+            ws.append([
+                '',  # Código de cuenta en blanco
+                'SUMA',  # Etiqueta para la suma
+                '', '', '',  # Celdas vacías para fecha y código de cuenta
+                accumulated_debit,  # Total acumulado Debe
+                accumulated_credit,  # Total acumulado Haber
+                accumulated_balance  # Total acumulado Saldo
+            ])
+
+            # Aplicar formato en negrita a toda la fila de suma
+            for cell in ws[row_index]:
+                cell.font = bold_font
+            row_index += 1
 
         # Ajustar el ancho de las columnas
         for col_index, column in enumerate(ws.columns, start=1):
