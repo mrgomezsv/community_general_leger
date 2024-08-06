@@ -133,12 +133,16 @@ class GeneralLedger(models.TransientModel):
                 date_summaries[move.date]['debit'] += move.debit
                 date_summaries[move.date]['credit'] += move.credit
 
+            # Ordenar las fechas de menor a mayor
+            sorted_dates = sorted(date_summaries.keys())
+
             # Agregar los datos agrupados por fecha
             accumulated_debit = initial_debit
             accumulated_credit = initial_credit
             accumulated_balance = initial_balance
 
-            for date, summary in date_summaries.items():
+            for date in sorted_dates:
+                summary = date_summaries[date]
                 accumulated_debit += summary['debit']
                 accumulated_credit += summary['credit']
                 accumulated_balance = accumulated_debit - accumulated_credit
