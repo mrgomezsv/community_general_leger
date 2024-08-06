@@ -64,6 +64,11 @@ class GeneralLedger(models.TransientModel):
 
         row_index = 7  # Fila de inicio para los datos
 
+        # Inicializar los totales globales
+        grand_total_debit = 0.0
+        grand_total_credit = 0.0
+        grand_total_balance = 0.0
+
         for group in groups:
             account_prefix = group.code_prefix_start
             accounts = self.env['account.account'].search([('code', 'like', f'{account_prefix}%')])
@@ -172,6 +177,19 @@ class GeneralLedger(models.TransientModel):
                 cell.font = bold_font
             row_index += 1
 
+            # Acumulación global de totales
+            grand_total_debit += accumulated_debit
+            grand_total_credit += accumulated_credit
+            grand_total_balance += accumulated_balance
+
+        # Agregar la fila de suma total dos filas después de la última fila de suma de los grupos
+        ws.append(['', 'SALDOS TOTALES', '', grand_total_debit, grand_total_credit, grand_total_balance])
+
+        # Aplicar formato en negrita a toda la fila de suma total
+        for cell in ws[row_index]:
+            cell.font = bold_font
+        row_index += 1
+
         # Ajustar el ancho de las columnas
         for col_index, column in enumerate(ws.columns, start=1):
             max_length = 0
@@ -212,5 +230,5 @@ class GeneralLedger(models.TransientModel):
         return {
             'type': 'ir.actions.act_url',
             'url': '/web/content/%s?download=true' % attachment.id,
-            'target': 'new',
+            'target': 'self',
         }
