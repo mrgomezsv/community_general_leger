@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
+
 from odoo import api, fields, models
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
 import base64
-from collections import defaultdict
-
 
 class GeneralLedger(models.TransientModel):
     _name = 'general.ledger'
@@ -57,6 +57,14 @@ class GeneralLedger(models.TransientModel):
         for cell in ws[4]:  # Aplicar formato a los encabezados de la tabla
             cell.font = bold_font
             cell.alignment = center_alignment
+
+        # Configurar el ancho de las columnas
+        ws.column_dimensions['A'].width = 10  # Columna A
+        ws.column_dimensions['B'].width = 25  # Columna B
+        ws.column_dimensions['C'].width = 13  # Columna C
+        ws.column_dimensions['D'].width = 10  # Columna D
+        ws.column_dimensions['E'].width = 10  # Columna E
+        ws.column_dimensions['F'].width = 10  # Columna F
 
         # Filtrar grupos de cuentas por prefijo
         group_model = self.env['account.group']
@@ -120,7 +128,7 @@ class GeneralLedger(models.TransientModel):
             ws.append([
                 '',  # Código de cuenta en blanco
                 'SALDO INICIAL',  # Etiqueta para el saldo inicial
-                '', '', '',  # Celdas vacías para fecha y código de cuenta
+                '',  # Celdas vacías para fecha y código de cuenta
                 initial_debit,  # Saldo inicial Debe
                 initial_credit,  # Saldo inicial Haber
                 initial_balance  # Saldo inicial Saldo
@@ -166,7 +174,7 @@ class GeneralLedger(models.TransientModel):
             ws.append([
                 '',  # Código de cuenta en blanco
                 'SUMA',  # Etiqueta para la suma
-                '', '', '',  # Celdas vacías para fecha y código de cuenta
+                '',  # Celdas vacías para fecha y código de cuenta
                 accumulated_debit,  # Total acumulado Debe
                 accumulated_credit,  # Total acumulado Haber
                 accumulated_balance  # Total acumulado Saldo
@@ -190,19 +198,6 @@ class GeneralLedger(models.TransientModel):
             cell.font = bold_font
         row_index += 1
 
-        # Ajustar el ancho de las columnas
-        for col_index, column in enumerate(ws.columns, start=1):
-            max_length = 0
-            for cell in column:
-                try:
-                    if len(str(cell.value)) > max_length:
-                        max_length = len(cell.value)
-                except:
-                    pass
-            adjusted_width = (max_length + 2)
-            col_letter = chr(64 + col_index)  # Convertir el índice a letra de columna (A, B, C, ...)
-            ws.column_dimensions[col_letter].width = adjusted_width
-
         # Guardar el archivo en memoria
         output = BytesIO()
         wb.save(output)
@@ -212,23 +207,14 @@ class GeneralLedger(models.TransientModel):
         file_content = base64.b64encode(output.read()).decode('utf-8')
         output.close()
 
-        # Actualizar el campo `file_content` del wizard
+        # Asignar el contenido del archivo al campo del modelo
         self.write({
-            'file_content': file_content
-        })
-
-        # Crear un archivo adjunto en Odoo
-        attachment = self.env['ir.attachment'].create({
-            'name': self.file_name,
-            'type': 'binary',
-            'datas': file_content,
-            'mimetype': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'res_model': 'general.ledger',
-            'res_id': self.id
+            'file_content': file_content,
+            'file_name': "Libro Mayor.xlsx",
         })
 
         return {
             'type': 'ir.actions.act_url',
-            'url': '/web/content/%s?download=true' % attachment.id,
+            'url': 'web/content/?model=general.ledger&id=%s&field=file_content&download=true&filename=%s' % (self.id, "Libro Mayor.xlsx"),
             'target': 'self',
         }
