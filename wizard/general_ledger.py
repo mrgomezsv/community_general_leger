@@ -5,7 +5,6 @@ from openpyxl.styles import Font, Alignment
 from io import BytesIO
 import base64
 
-
 class GeneralLedger(models.TransientModel):
     _name = 'general.ledger'
     _description = 'General Ledger'
@@ -16,8 +15,6 @@ class GeneralLedger(models.TransientModel):
     company_id = fields.Many2one('res.company', string="Compañía", default=lambda self: self.env.company)
     file_content = fields.Binary(string="Archivo Contenido")
     file_name = fields.Char(string="Nombre del Archivo", default="Libro Mayor.xlsx")
-    code_prefix_start = fields.Char(string="Prefijo de Código Inicio")
-    code_prefix_end = fields.Char(string="Prefijo de Código Fin")
 
     def action_generate_excel(self):
         # Crear un libro de trabajo y una hoja
@@ -59,27 +56,48 @@ class GeneralLedger(models.TransientModel):
             cell.font = bold_font
             cell.alignment = center_alignment
 
-        # Filtrar las cuentas contables por prefijo
-        account_model = self.env['account.account']
-        domain = [('code', 'ilike', self.code_prefix_start)]
-        if self.code_prefix_end:
-            domain.append(('code', '<=', self.code_prefix_end))
-        accounts = account_model.search(domain)
+        # Filtrar grupos de cuentas por prefijo
+        group_model = self.env['account.group']
+        groups = group_model.search([('major_account', '=', True)])
 
-        # Agregar los datos de las cuentas al Excel
-        data = []
-        for account in accounts:
-            data.append([
-                account.code,
-                account.name,
-                '',  # Fecha, puedes agregar la lógica para calcular la fecha
-                0.0,  # Debe, puedes agregar la lógica para calcular el valor del debe
-                0.0,  # Haber, puedes agregar la lógica para calcular el valor del haber
-                0.0  # Saldo, puedes agregar la lógica para calcular el saldo
+        row_index = 7  # Fila de inicio para los datos
+
+        for group in groups:
+            account_prefix = group.code_prefix_start
+            accounts = self.env['account.account'].search([('code', 'like', f'{account_prefix}%')])
+
+            # Obtener movimientos contables para las cuentas filtradas en el rango de fechas
+            moves = self.env['account.move.line'].search([
+                ('account_id', 'in', accounts.ids),
+                ('date', '>=', self.report_from_date),
+                ('date', '<=', self.report_to_date)
             ])
 
-        for row in data:
-            ws.append(row)
+            # Calcular totales para el grupo
+            total_debit = sum(move.debit for move in moves)
+            total_credit = sum(move.credit for move in moves)
+            total_balance = total_debit - total_credit
+
+            # Agregar datos del grupo en la fila 7
+            ws.cell(row=row_index, column=1, value=account_prefix).font = bold_font
+            ws.cell(row=row_index, column=2, value=group.name).font = bold_font
+            ws.cell(row=row_index, column=4, value=total_debit).font = bold_font
+            ws.cell(row=row_index, column=5, value=total_credit).font = bold_font
+            ws.cell(row=row_index, column=6, value=total_balance).font = bold_font
+
+            row_index += 1
+
+            # Agregar los datos de los movimientos de las cuentas
+            for move in moves:
+                ws.append([
+                    move.account_id.code,
+                    move.account_id.name,
+                    move.date,
+                    move.debit,
+                    move.credit,
+                    move.balance
+                ])
+                row_index += 1
 
         # Ajustar el ancho de las columnas
         for col_index, column in enumerate(ws.columns, start=1):
