@@ -89,9 +89,14 @@ class GeneralLedger(models.TransientModel):
 
             # Agregar los datos de los movimientos de las cuentas
             for move in moves:
+                account_code = move.account_id.code
+                account_name = "Movimiento del"  # Reemplazado por "Movimiento del"
+                if account_name == "Movimiento del":
+                    account_code = ""  # Dejar en blanco el código de cuenta
+
                 ws.append([
-                    move.account_id.code,
-                    "Movimiento del",  # Reemplazado por "Movimiento del"
+                    account_code,  # Código de cuenta en blanco si es "Movimiento del"
+                    account_name,
                     move.date,
                     move.debit,
                     move.credit,
