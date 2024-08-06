@@ -91,7 +91,7 @@ class GeneralLedger(models.TransientModel):
             for move in moves:
                 ws.append([
                     move.account_id.code,
-                    move.account_id.name,
+                    "Movimiento del",  # Reemplazado por "Movimiento del"
                     move.date,
                     move.debit,
                     move.credit,
