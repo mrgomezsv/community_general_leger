@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
 import base64
+from collections import defaultdict
 
 class GeneralLedger(models.TransientModel):
     _name = 'general.ledger'
@@ -73,6 +74,13 @@ class GeneralLedger(models.TransientModel):
                 ('date', '<=', self.report_to_date)
             ])
 
+            # Agrupar movimientos por fecha
+            date_summaries = defaultdict(lambda: {'debit': 0.0, 'credit': 0.0})
+
+            for move in moves:
+                date_summaries[move.date]['debit'] += move.debit
+                date_summaries[move.date]['credit'] += move.credit
+
             # Calcular totales para el grupo
             total_debit = sum(move.debit for move in moves)
             total_credit = sum(move.credit for move in moves)
@@ -87,20 +95,15 @@ class GeneralLedger(models.TransientModel):
 
             row_index += 1
 
-            # Agregar los datos de los movimientos de las cuentas
-            for move in moves:
-                account_code = move.account_id.code
-                account_name = "Movimiento del"  # Reemplazado por "Movimiento del"
-                if account_name == "Movimiento del":
-                    account_code = ""  # Dejar en blanco el código de cuenta
-
+            # Agregar los datos agrupados por fecha
+            for date, summary in date_summaries.items():
                 ws.append([
-                    account_code,  # Código de cuenta en blanco si es "Movimiento del"
-                    account_name,
-                    move.date,
-                    move.debit,
-                    move.credit,
-                    move.balance
+                    "",  # Código de cuenta en blanco
+                    "Movimiento del",  # Reemplazado por "Movimiento del"
+                    date,
+                    summary['debit'],
+                    summary['credit'],
+                    summary['debit'] - summary['credit']
                 ])
                 row_index += 1
 
